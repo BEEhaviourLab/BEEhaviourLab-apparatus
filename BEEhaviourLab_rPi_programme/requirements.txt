@@ -1,0 +1,10 @@
+opencv-python>=4.8.0
+picamera2>=0.3.12
+tflite-runtime>=2.14.0
+adafruit-circuitpython-ssd1306>=2.12.4
+RPi.GPIO>=0.7.0
+board>=1.0
+busio>=1.0
+adafruit-blinka>=8.0.0
+numpy>=1.21.0
+ncnn
