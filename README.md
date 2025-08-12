@@ -6,6 +6,8 @@ A comprehensive system for automated behavioural recording of bees in controlled
 
 The BEEhaviourLab apparatus is designed for automated recording of bee behaviour in controlled experimental conditions. The system integrates video recording, audio capture, environmental monitoring, and precise timing controls to facilitate high-throughput behavioral studies.
 
+![BEEhaviourLab Apparatus Front View](white_background_front-cropped.png)
+
 ## Repository Structure
 
 ### Hardware Assembly
