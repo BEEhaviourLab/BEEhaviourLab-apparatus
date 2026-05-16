@@ -18,6 +18,13 @@
     "reps": 192, 
     "spaces": 840,
 
+    "target_temp": 33.0,
+    "experiment_start_time": "12:00",
+    "night_start_time": "18:00",
+    "day_start_time": "06:00",
+    "day_night_temp_variation": 3,
+    "pico_serial_port": "/dev/ttyACM0",
+
     "Name": "rPi1",
     "rPi_num": 1,
     "ssd_path": "/home/rPi1/myssd/",

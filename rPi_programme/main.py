@@ -16,6 +16,11 @@ from threads.OLED_display import OLED_wipe
 #from threads.temp_rh import DHT
 from threads.pi_cam import record_video, convert_h264_to_mp4
 from threads.USB_mic import find_usb_mic, record_audio, convert_wav_to_flac
+from threads.pico_temp import (
+    configure_segment_temperature,
+    stop_pico_logging_and_fetch,
+    write_temp_tracking,
+)
 #from threads.time_clapper import time_clapper
 from rPi_program.threads.video_inference_ncnn import run_ncnn_inference
 
@@ -68,6 +73,8 @@ if __name__ == "__main__":
     # Check USB mic card & device
     card, device = find_usb_mic()
     print(f"Found USB microphone on card {card}, device {device}")
+
+    pico_port = config.get("pico_serial_port")
     
     ###############################
     ## Loop to repeat threads ##
@@ -78,6 +85,20 @@ if __name__ == "__main__":
         seg_time = time.time()
         
         day_folder = create_incremental_subfolder(os.path.join(ssd_path, day + '-' + ID))
+
+        segment_setpoint = None
+        schedule_context = None
+        try:
+            pico_port, segment_setpoint, schedule_context = configure_segment_temperature(
+                config, replicate
+            )
+            print(
+                f"Pico setpoint for segment {replicate}: {segment_setpoint:.2f} C "
+                f"(virtual time {schedule_context['virtual_experiment_time']}, "
+                f"{schedule_context['experiment_phase']})"
+            )
+        except Exception as exc:
+            print(f"Warning: could not configure Pico temperature: {exc}")
         
         # Define metadata for .json file
         metadata = {
@@ -107,7 +128,20 @@ if __name__ == "__main__":
             "Mic sample rate": config["mic sample rate"],
             "Audio recording settings": config["audio recording settings"],
             "Video conversion settings": config["video conversion settings"],
-            "Audio conversion settings": config["audio conversion settings"]
+            "Audio conversion settings": config["audio conversion settings"],
+            "target_temp": config["target_temp"],
+            "segment_setpoint": segment_setpoint,
+            "experiment_start_time": config["experiment_start_time"],
+            "night_start_time": config["night_start_time"],
+            "day_start_time": config["day_start_time"],
+            "day_night_temp_variation": config["day_night_temp_variation"],
+            "cycle_duration_seconds": Rec_time + spaces,
+            "virtual_experiment_time": (
+                schedule_context["virtual_experiment_time"] if schedule_context else None
+            ),
+            "experiment_phase": (
+                schedule_context["experiment_phase"] if schedule_context else None
+            ),
         }
     
         metadata_name = os.path.join(day_folder, day + '_' + Name + '_' + str(replicate) + '_' + ID + '_metadata.json')
@@ -216,6 +250,24 @@ if __name__ == "__main__":
                 time.sleep(spaces - runover_time)
             else:
                 time.sleep(1) #if not, just get on with next recording
+
+        temp_tracking_file = os.path.join(
+            day_folder, day + '_' + Name + '_' + str(replicate) + '_' + ID + '_temp_tracking.json'
+        )
+        if pico_port and segment_setpoint is not None:
+            try:
+                readings = stop_pico_logging_and_fetch(pico_port)
+                tracking = write_temp_tracking(
+                    temp_tracking_file, readings, segment_setpoint, config, replicate
+                )
+                print(
+                    f"Temperature tracking saved: avg={tracking['average_temperature']}, "
+                    f"std={tracking['temperature_std_dev']} ({tracking['sample_count']} samples)"
+                )
+            except Exception as exc:
+                print(f"Warning: could not fetch Pico temperature log: {exc}")
+        else:
+            print("Skipping temperature tracking (Pico not configured for this segment).")
 
 #clean up pins
 GPIO.cleanup()

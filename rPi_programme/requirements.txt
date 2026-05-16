@@ -8,3 +8,4 @@ busio>=1.0
 adafruit-blinka>=8.0.0
 numpy>=1.21.0
 ncnn
+pyserial>=3.5
