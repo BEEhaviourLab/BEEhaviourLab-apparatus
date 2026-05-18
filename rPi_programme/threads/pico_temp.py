@@ -193,8 +193,11 @@ def stop_pico_logging_and_fetch(port, timeout=30.0):
             raise RuntimeError(f"Failed to fetch Pico temperature log: {response}")
 
         parts = response.split(",")
-        count = int(parts[2])
-        readings = [float(value) for value in parts[3:3 + count]]
+        if len(parts) < 4 or parts[:3] != ["OK", "LOG", "DATA"]:
+            raise RuntimeError(f"Unexpected Pico log response: {response}")
+
+        count = int(parts[3])
+        readings = [float(value) for value in parts[4:4 + count]]
         if len(readings) != count:
             raise RuntimeError(
                 f"Pico returned {len(readings)} readings but reported {count}"
